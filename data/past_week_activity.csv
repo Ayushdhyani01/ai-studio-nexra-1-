@@ -1,0 +1,175 @@
+timestamp,user_id,user_email,event_type,device,location,ip_address,details
+2026-09-16 09:05:00,usr-elena,elena@company.com,File Access,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Opened project document
+2026-09-16 09:28:00,usr-priya,priya@company.com,Login,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Sign-in via SSO with MFA
+2026-09-16 09:42:00,usr-alex,alex@company.com,File Access,Apple MacBook Pro M3,"Austin, TX, US",136.56.88.14,Read shared repository file
+2026-09-16 09:50:00,usr-david,david@company.com,File Access,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Read shared repository file
+2026-09-16 09:50:00,usr-carlos,carlos@company.com,File Access,Dell Precision 5570,"Austin, TX, US",192.0.2.130,Opened project document
+2026-09-16 10:12:00,usr-alex,alex@company.com,File Access,Apple MacBook Pro M3,"Austin, TX, US",136.56.88.14,Opened project document
+2026-09-16 11:05:00,usr-maya,maya@company.com,File Access,Dell Latitude 7440,"San Jose, CA, US",192.0.2.45,Reviewed design specification
+2026-09-16 11:12:00,usr-sarah,sarah@company.com,File Access,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Opened project document
+2026-09-16 11:35:00,usr-david,david@company.com,File Access,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Read shared repository file
+2026-09-16 13:42:00,usr-dmitri,dmitri@company.com,File Access,Lenovo ThinkStation P620,"Berlin, DE",198.51.100.34,Reviewed design specification
+2026-09-16 14:12:00,usr-jordan,jordan@company.com,Login,MacBook Air M2,"Boston, MA, US",198.51.100.120,Sign-in via SSO with MFA
+2026-09-16 14:20:00,usr-marcus,marcus@company.com,Login,Lenovo ThinkPad P1,"San Francisco, CA, US",203.0.113.55,Sign-in via SSO with MFA
+2026-09-16 14:35:00,usr-priya,priya@company.com,File Access,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Read shared repository file
+2026-09-16 14:50:00,usr-carlos,carlos@company.com,Login,Dell Precision 5570,"Austin, TX, US",192.0.2.130,Sign-in via SSO with MFA
+2026-09-16 15:05:00,usr-maya,maya@company.com,File Access,Dell Latitude 7440,"San Jose, CA, US",192.0.2.45,Reviewed design specification
+2026-09-16 15:05:00,usr-jordan,jordan@company.com,File Access,MacBook Air M2,"Boston, MA, US",198.51.100.120,Opened project document
+2026-09-16 15:28:00,usr-dmitri,dmitri@company.com,File Access,Lenovo ThinkStation P620,"Berlin, DE",198.51.100.34,Opened project document
+2026-09-16 16:12:00,usr-elena,elena@company.com,File Access,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Reviewed design specification
+2026-09-16 16:50:00,usr-sarah,sarah@company.com,File Access,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Read shared repository file
+2026-09-16 16:50:00,usr-david,david@company.com,Login,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Sign-in via SSO with MFA
+2026-09-16 17:05:00,usr-sarah,sarah@company.com,Login,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Sign-in via SSO with MFA
+2026-09-16 17:35:00,usr-elena,elena@company.com,Login,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Sign-in via SSO with MFA
+2026-09-16 17:50:00,usr-marcus,marcus@company.com,File Access,Lenovo ThinkPad P1,"San Francisco, CA, US",203.0.113.55,Opened project document
+2026-09-16 17:50:00,usr-priya,priya@company.com,File Access,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Reviewed design specification
+2026-09-17 09:12:00,usr-marcus,marcus@company.com,File Access,Lenovo ThinkPad P1,"San Francisco, CA, US",203.0.113.55,Reviewed design specification
+2026-09-17 09:50:00,usr-jordan,jordan@company.com,Login,MacBook Air M2,"Boston, MA, US",198.51.100.120,Sign-in via SSO with MFA
+2026-09-17 10:35:00,usr-carlos,carlos@company.com,Login,Dell Precision 5570,"Austin, TX, US",192.0.2.130,Session refresh after lock timeout
+2026-09-17 11:28:00,usr-elena,elena@company.com,File Access,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Read shared repository file
+2026-09-17 11:42:00,usr-alex,alex@company.com,File Access,Apple MacBook Pro M3,"Austin, TX, US",136.56.88.14,Read shared repository file
+2026-09-17 11:42:00,usr-marcus,marcus@company.com,File Access,Lenovo ThinkPad P1,"San Francisco, CA, US",203.0.113.55,Read shared repository file
+2026-09-17 11:50:00,usr-dmitri,dmitri@company.com,Login,Lenovo ThinkStation P620,"Berlin, DE",198.51.100.34,Sign-in via SSO with MFA
+2026-09-17 13:12:00,usr-alex,alex@company.com,File Access,Apple MacBook Pro M3,"Austin, TX, US",136.56.88.14,Read shared repository file
+2026-09-17 13:12:00,usr-dmitri,dmitri@company.com,Login,Lenovo ThinkStation P620,"Berlin, DE",198.51.100.34,Sign-in via SSO with MFA
+2026-09-17 13:35:00,usr-david,david@company.com,File Access,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Reviewed design specification
+2026-09-17 13:35:00,usr-carlos,carlos@company.com,File Access,Dell Precision 5570,"Austin, TX, US",192.0.2.130,Read shared repository file
+2026-09-17 13:42:00,usr-elena,elena@company.com,File Access,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Reviewed design specification
+2026-09-17 14:28:00,usr-priya,priya@company.com,File Access,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Read shared repository file
+2026-09-17 14:42:00,usr-maya,maya@company.com,Login,Dell Latitude 7440,"San Jose, CA, US",192.0.2.45,Sign-in via SSO with MFA
+2026-09-17 15:20:00,usr-david,david@company.com,File Access,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Reviewed design specification
+2026-09-17 15:28:00,usr-sarah,sarah@company.com,File Access,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Opened project document
+2026-09-17 15:35:00,usr-maya,maya@company.com,File Access,Dell Latitude 7440,"San Jose, CA, US",192.0.2.45,Opened project document
+2026-09-17 15:50:00,usr-dmitri,dmitri@company.com,File Access,Lenovo ThinkStation P620,"Berlin, DE",198.51.100.34,Read shared repository file
+2026-09-17 16:12:00,usr-marcus,marcus@company.com,Login,Lenovo ThinkPad P1,"San Francisco, CA, US",203.0.113.55,Session refresh after lock timeout
+2026-09-17 16:12:00,usr-priya,priya@company.com,File Access,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Opened project document
+2026-09-17 16:12:00,usr-jordan,jordan@company.com,File Access,MacBook Air M2,"Boston, MA, US",198.51.100.120,Opened project document
+2026-09-17 16:20:00,usr-alex,alex@company.com,File Access,Apple MacBook Pro M3,"Austin, TX, US",136.56.88.14,Opened project document
+2026-09-17 16:20:00,usr-sarah,sarah@company.com,File Access,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Opened project document
+2026-09-17 16:35:00,usr-maya,maya@company.com,File Access,Dell Latitude 7440,"San Jose, CA, US",192.0.2.45,Opened project document
+2026-09-17 16:35:00,usr-carlos,carlos@company.com,Login,Dell Precision 5570,"Austin, TX, US",192.0.2.130,Sign-in via SSO with MFA
+2026-09-17 17:50:00,usr-jordan,jordan@company.com,Login,MacBook Air M2,"Boston, MA, US",198.51.100.120,Session refresh after lock timeout
+2026-09-18 09:12:00,usr-carlos,carlos@company.com,File Access,Dell Precision 5570,"Austin, TX, US",192.0.2.130,Opened project document
+2026-09-18 09:20:00,usr-marcus,marcus@company.com,Login,Lenovo ThinkPad P1,"San Francisco, CA, US",203.0.113.55,Session refresh after lock timeout
+2026-09-18 09:50:00,usr-david,david@company.com,File Access,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Reviewed design specification
+2026-09-18 10:20:00,usr-dmitri,dmitri@company.com,File Access,Lenovo ThinkStation P620,"Berlin, DE",198.51.100.34,Opened project document
+2026-09-18 10:28:00,usr-maya,maya@company.com,File Access,Dell Latitude 7440,"San Jose, CA, US",192.0.2.45,Opened project document
+2026-09-18 10:35:00,usr-alex,alex@company.com,File Access,Apple MacBook Pro M3,"Austin, TX, US",136.56.88.14,Read shared repository file
+2026-09-18 10:35:00,usr-elena,elena@company.com,Login,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Sign-in via SSO with MFA
+2026-09-18 11:12:00,usr-sarah,sarah@company.com,Login,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Sign-in via SSO with MFA
+2026-09-18 11:28:00,usr-maya,maya@company.com,Login,Dell Latitude 7440,"San Jose, CA, US",192.0.2.45,Sign-in via SSO with MFA
+2026-09-18 11:50:00,usr-priya,priya@company.com,File Access,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Reviewed design specification
+2026-09-18 13:35:00,usr-dmitri,dmitri@company.com,File Access,Lenovo ThinkStation P620,"Berlin, DE",198.51.100.34,Reviewed design specification
+2026-09-18 13:42:00,usr-jordan,jordan@company.com,File Access,MacBook Air M2,"Boston, MA, US",198.51.100.120,Read shared repository file
+2026-09-18 14:05:00,usr-marcus,marcus@company.com,Login,Lenovo ThinkPad P1,"San Francisco, CA, US",203.0.113.55,Sign-in via SSO with MFA
+2026-09-18 14:28:00,usr-priya,priya@company.com,File Access,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Opened project document
+2026-09-18 14:28:00,usr-jordan,jordan@company.com,File Access,MacBook Air M2,"Boston, MA, US",198.51.100.120,Reviewed design specification
+2026-09-18 14:50:00,usr-elena,elena@company.com,File Access,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Read shared repository file
+2026-09-18 15:12:00,usr-sarah,sarah@company.com,File Access,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Reviewed design specification
+2026-09-18 15:50:00,usr-alex,alex@company.com,File Access,Apple MacBook Pro M3,"Austin, TX, US",136.56.88.14,Read shared repository file
+2026-09-18 16:05:00,usr-sarah,sarah@company.com,Login,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Sign-in via SSO with MFA
+2026-09-18 16:50:00,usr-david,david@company.com,File Access,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Opened project document
+2026-09-18 17:05:00,usr-carlos,carlos@company.com,File Access,Dell Precision 5570,"Austin, TX, US",192.0.2.130,Read shared repository file
+2026-09-18 17:12:00,usr-david,david@company.com,Login,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Session refresh after lock timeout
+2026-09-18 17:35:00,usr-priya,priya@company.com,File Access,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Opened project document
+2026-09-18 17:50:00,usr-elena,elena@company.com,File Access,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Reviewed design specification
+2026-09-19 09:12:00,usr-alex,alex@company.com,File Access,Apple MacBook Pro M3,"Austin, TX, US",136.56.88.14,Reviewed design specification
+2026-09-19 09:35:00,usr-jordan,jordan@company.com,Login,MacBook Air M2,"Boston, MA, US",198.51.100.120,Sign-in via SSO with MFA
+2026-09-19 09:50:00,usr-maya,maya@company.com,File Access,Dell Latitude 7440,"San Jose, CA, US",192.0.2.45,Read shared repository file
+2026-09-19 10:05:00,usr-jordan,jordan@company.com,File Access,MacBook Air M2,"Boston, MA, US",198.51.100.120,Opened project document
+2026-09-19 10:35:00,usr-elena,elena@company.com,File Access,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Opened project document
+2026-09-19 10:50:00,usr-dmitri,dmitri@company.com,Login,Lenovo ThinkStation P620,"Berlin, DE",198.51.100.34,Session refresh after lock timeout
+2026-09-19 10:50:00,usr-carlos,carlos@company.com,Login,Dell Precision 5570,"Austin, TX, US",192.0.2.130,Session refresh after lock timeout
+2026-09-19 13:05:00,usr-maya,maya@company.com,File Access,Dell Latitude 7440,"San Jose, CA, US",192.0.2.45,Reviewed design specification
+2026-09-19 13:05:00,usr-carlos,carlos@company.com,File Access,Dell Precision 5570,"Austin, TX, US",192.0.2.130,Opened project document
+2026-09-19 13:12:00,usr-dmitri,dmitri@company.com,Login,Lenovo ThinkStation P620,"Berlin, DE",198.51.100.34,Sign-in via SSO with MFA
+2026-09-19 13:12:00,usr-priya,priya@company.com,Login,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Sign-in via SSO with MFA
+2026-09-19 13:28:00,usr-marcus,marcus@company.com,Login,Lenovo ThinkPad P1,"San Francisco, CA, US",203.0.113.55,Sign-in via SSO with MFA
+2026-09-19 13:28:00,usr-david,david@company.com,File Access,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Opened project document
+2026-09-19 14:12:00,usr-alex,alex@company.com,Login,Apple MacBook Pro M3,"Austin, TX, US",136.56.88.14,Sign-in via SSO with MFA
+2026-09-19 14:28:00,usr-david,david@company.com,File Access,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Opened project document
+2026-09-19 14:28:00,usr-priya,priya@company.com,File Access,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Reviewed design specification
+2026-09-19 15:12:00,usr-jordan,jordan@company.com,Login,MacBook Air M2,"Boston, MA, US",198.51.100.120,Session refresh after lock timeout
+2026-09-19 15:42:00,usr-marcus,marcus@company.com,Login,Lenovo ThinkPad P1,"San Francisco, CA, US",203.0.113.55,Sign-in via SSO with MFA
+2026-09-19 15:50:00,usr-sarah,sarah@company.com,Login,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Sign-in via SSO with MFA
+2026-09-19 16:05:00,usr-alex,alex@company.com,Login,Apple MacBook Pro M3,"Austin, TX, US",136.56.88.14,Sign-in via SSO with MFA
+2026-09-19 16:05:00,usr-marcus,marcus@company.com,Login,Lenovo ThinkPad P1,"San Francisco, CA, US",203.0.113.55,Session refresh after lock timeout
+2026-09-19 16:12:00,usr-maya,maya@company.com,File Access,Dell Latitude 7440,"San Jose, CA, US",192.0.2.45,Read shared repository file
+2026-09-19 16:12:00,usr-sarah,sarah@company.com,File Access,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Opened project document
+2026-09-19 17:05:00,usr-dmitri,dmitri@company.com,Login,Lenovo ThinkStation P620,"Berlin, DE",198.51.100.34,Session refresh after lock timeout
+2026-09-19 17:28:00,usr-carlos,carlos@company.com,Login,Dell Precision 5570,"Austin, TX, US",192.0.2.130,Sign-in via SSO with MFA
+2026-09-19 17:42:00,usr-elena,elena@company.com,File Access,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Reviewed design specification
+2026-09-20 09:05:00,usr-elena,elena@company.com,Login,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Sign-in via SSO with MFA
+2026-09-20 09:35:00,usr-dmitri,dmitri@company.com,Login,Lenovo ThinkStation P620,"Berlin, DE",198.51.100.34,Sign-in via SSO with MFA
+2026-09-20 09:35:00,usr-jordan,jordan@company.com,File Access,MacBook Air M2,"Boston, MA, US",198.51.100.120,Opened project document
+2026-09-20 10:05:00,usr-marcus,marcus@company.com,File Access,Lenovo ThinkPad P1,"San Francisco, CA, US",203.0.113.55,Opened project document
+2026-09-20 10:12:00,usr-maya,maya@company.com,File Access,Dell Latitude 7440,"San Jose, CA, US",192.0.2.45,Read shared repository file
+2026-09-20 10:35:00,usr-jordan,jordan@company.com,File Access,MacBook Air M2,"Boston, MA, US",198.51.100.120,Read shared repository file
+2026-09-20 10:42:00,usr-david,david@company.com,File Access,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Read shared repository file
+2026-09-20 11:05:00,usr-carlos,carlos@company.com,File Access,Dell Precision 5570,"Austin, TX, US",192.0.2.130,Opened project document
+2026-09-20 11:12:00,usr-david,david@company.com,File Access,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Read shared repository file
+2026-09-20 11:35:00,usr-elena,elena@company.com,Login,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Session refresh after lock timeout
+2026-09-20 11:50:00,usr-alex,alex@company.com,Login,Apple MacBook Pro M3,"Austin, TX, US",136.56.88.14,Session refresh after lock timeout
+2026-09-20 11:50:00,usr-dmitri,dmitri@company.com,File Access,Lenovo ThinkStation P620,"Berlin, DE",198.51.100.34,Opened project document
+2026-09-20 11:50:00,usr-priya,priya@company.com,Login,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Sign-in via SSO with MFA
+2026-09-20 13:05:00,usr-sarah,sarah@company.com,File Access,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Reviewed design specification
+2026-09-20 13:05:00,usr-priya,priya@company.com,Login,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Session refresh after lock timeout
+2026-09-20 14:05:00,usr-sarah,sarah@company.com,Login,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Session refresh after lock timeout
+2026-09-20 14:28:00,usr-marcus,marcus@company.com,Login,Lenovo ThinkPad P1,"San Francisco, CA, US",203.0.113.55,Sign-in via SSO with MFA
+2026-09-20 14:35:00,usr-priya,priya@company.com,File Access,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Reviewed design specification
+2026-09-20 15:28:00,usr-david,david@company.com,File Access,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Opened project document
+2026-09-20 15:35:00,usr-elena,elena@company.com,File Access,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Reviewed design specification
+2026-09-20 16:20:00,usr-alex,alex@company.com,Login,Apple MacBook Pro M3,"Austin, TX, US",136.56.88.14,Session refresh after lock timeout
+2026-09-20 16:42:00,usr-sarah,sarah@company.com,File Access,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Reviewed design specification
+2026-09-20 17:12:00,usr-maya,maya@company.com,Login,Dell Latitude 7440,"San Jose, CA, US",192.0.2.45,Sign-in via SSO with MFA
+2026-09-20 17:20:00,usr-carlos,carlos@company.com,File Access,Dell Precision 5570,"Austin, TX, US",192.0.2.130,Read shared repository file
+2026-09-21 09:05:00,usr-david,david@company.com,File Access,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Opened project document
+2026-09-21 09:12:00,usr-maya,maya@company.com,File Access,Dell Latitude 7440,"San Jose, CA, US",192.0.2.45,Read shared repository file
+2026-09-21 09:50:00,usr-jordan,jordan@company.com,Login,MacBook Air M2,"Boston, MA, US",198.51.100.120,Sign-in via SSO with MFA
+2026-09-21 10:42:00,usr-sarah,sarah@company.com,Login,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Session refresh after lock timeout
+2026-09-21 10:50:00,usr-marcus,marcus@company.com,File Access,Lenovo ThinkPad P1,"San Francisco, CA, US",203.0.113.55,Read shared repository file
+2026-09-21 10:50:00,usr-carlos,carlos@company.com,Login,Dell Precision 5570,"Austin, TX, US",192.0.2.130,Session refresh after lock timeout
+2026-09-21 11:20:00,usr-elena,elena@company.com,File Access,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Reviewed design specification
+2026-09-21 11:20:00,usr-jordan,jordan@company.com,File Access,MacBook Air M2,"Boston, MA, US",198.51.100.120,Opened project document
+2026-09-21 11:35:00,usr-carlos,carlos@company.com,File Access,Dell Precision 5570,"Austin, TX, US",192.0.2.130,Opened project document
+2026-09-21 11:42:00,usr-alex,alex@company.com,File Access,Apple MacBook Pro M3,"Austin, TX, US",136.56.88.14,Read shared repository file
+2026-09-21 13:05:00,usr-marcus,marcus@company.com,Login,Lenovo ThinkPad P1,"San Francisco, CA, US",203.0.113.55,Sign-in via SSO with MFA
+2026-09-21 13:35:00,usr-alex,alex@company.com,File Access,Apple MacBook Pro M3,"Austin, TX, US",136.56.88.14,Reviewed design specification
+2026-09-21 13:50:00,usr-dmitri,dmitri@company.com,File Access,Lenovo ThinkStation P620,"Berlin, DE",198.51.100.34,Read shared repository file
+2026-09-21 14:05:00,usr-alex,alex@company.com,File Access,Apple MacBook Pro M3,"Austin, TX, US",136.56.88.14,Reviewed design specification
+2026-09-21 14:05:00,usr-maya,maya@company.com,Login,Dell Latitude 7440,"San Jose, CA, US",192.0.2.45,Sign-in via SSO with MFA
+2026-09-21 14:12:00,usr-carlos,carlos@company.com,File Access,Dell Precision 5570,"Austin, TX, US",192.0.2.130,Opened project document
+2026-09-21 14:35:00,usr-sarah,sarah@company.com,Login,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Session refresh after lock timeout
+2026-09-21 14:35:00,usr-priya,priya@company.com,File Access,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Opened project document
+2026-09-21 15:20:00,usr-marcus,marcus@company.com,File Access,Lenovo ThinkPad P1,"San Francisco, CA, US",203.0.113.55,Opened project document
+2026-09-21 15:28:00,usr-priya,priya@company.com,File Access,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Opened project document
+2026-09-21 15:35:00,usr-dmitri,dmitri@company.com,Login,Lenovo ThinkStation P620,"Berlin, DE",198.51.100.34,Session refresh after lock timeout
+2026-09-21 15:42:00,usr-maya,maya@company.com,File Access,Dell Latitude 7440,"San Jose, CA, US",192.0.2.45,Reviewed design specification
+2026-09-21 16:20:00,usr-dmitri,dmitri@company.com,Login,Lenovo ThinkStation P620,"Berlin, DE",198.51.100.34,Sign-in via SSO with MFA
+2026-09-21 16:42:00,usr-jordan,jordan@company.com,File Access,MacBook Air M2,"Boston, MA, US",198.51.100.120,Opened project document
+2026-09-21 17:12:00,usr-elena,elena@company.com,File Access,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Read shared repository file
+2026-09-21 17:35:00,usr-david,david@company.com,Login,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Sign-in via SSO with MFA
+2026-09-22 09:50:00,usr-elena,elena@company.com,Login,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Session refresh after lock timeout
+2026-09-22 10:12:00,usr-elena,elena@company.com,File Access,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Opened project document
+2026-09-22 10:35:00,usr-david,david@company.com,File Access,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Read shared repository file
+2026-09-22 11:05:00,usr-alex,alex@company.com,File Access,Apple MacBook Pro M3,"Austin, TX, US",136.56.88.14,Opened project document
+2026-09-22 11:05:00,usr-david,david@company.com,Login,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Sign-in via SSO with MFA
+2026-09-22 11:05:00,usr-jordan,jordan@company.com,Login,MacBook Air M2,"Boston, MA, US",198.51.100.120,Session refresh after lock timeout
+2026-09-22 11:28:00,usr-priya,priya@company.com,File Access,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Reviewed design specification
+2026-09-22 11:28:00,usr-carlos,carlos@company.com,Login,Dell Precision 5570,"Austin, TX, US",192.0.2.130,Sign-in via SSO with MFA
+2026-09-22 11:35:00,usr-sarah,sarah@company.com,Login,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Session refresh after lock timeout
+2026-09-22 11:50:00,usr-dmitri,dmitri@company.com,File Access,Lenovo ThinkStation P620,"Berlin, DE",198.51.100.34,Opened project document
+2026-09-22 13:05:00,usr-jordan,jordan@company.com,File Access,MacBook Air M2,"Boston, MA, US",198.51.100.120,Reviewed design specification
+2026-09-22 13:20:00,usr-marcus,marcus@company.com,File Access,Lenovo ThinkPad P1,"San Francisco, CA, US",203.0.113.55,Read shared repository file
+2026-09-22 13:42:00,usr-alex,alex@company.com,File Access,Apple MacBook Pro M3,"Austin, TX, US",136.56.88.14,Read shared repository file
+2026-09-22 13:42:00,usr-carlos,carlos@company.com,File Access,Dell Precision 5570,"Austin, TX, US",192.0.2.130,Read shared repository file
+2026-09-22 13:50:00,usr-elena,elena@company.com,Login,Apple MacBook Pro 16,"Seattle, WA, US",203.0.113.21,Session refresh after lock timeout
+2026-09-22 14:42:00,usr-sarah,sarah@company.com,File Access,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Reviewed design specification
+2026-09-22 15:12:00,usr-dmitri,dmitri@company.com,Login,Lenovo ThinkStation P620,"Berlin, DE",198.51.100.34,Sign-in via SSO with MFA
+2026-09-22 15:20:00,usr-sarah,sarah@company.com,Login,Dell XPS 15 9530,"Denver, CO, US",198.51.100.78,Sign-in via SSO with MFA
+2026-09-22 15:35:00,usr-priya,priya@company.com,Login,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Sign-in via SSO with MFA
+2026-09-22 16:42:00,usr-maya,maya@company.com,File Access,Dell Latitude 7440,"San Jose, CA, US",192.0.2.45,Opened project document
+2026-09-22 17:20:00,usr-maya,maya@company.com,File Access,Dell Latitude 7440,"San Jose, CA, US",192.0.2.45,Opened project document
+2026-09-22 17:28:00,usr-priya,priya@company.com,File Access,Surface Laptop 5,"Chicago, IL, US",203.0.113.102,Reviewed design specification
+2026-09-22 17:35:00,usr-david,david@company.com,Login,Apple MacBook Pro M2,"New York, NY, US",192.0.2.90,Session refresh after lock timeout
+2026-09-22 17:50:00,usr-marcus,marcus@company.com,Login,Lenovo ThinkPad P1,"San Francisco, CA, US",203.0.113.55,Sign-in via SSO with MFA
