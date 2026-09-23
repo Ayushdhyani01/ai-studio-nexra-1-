@@ -8,6 +8,9 @@ export interface UserBaseline {
   eventCount: number;
   usualStartHour: number;
   usualEndHour: number;
+  /** Gaussian fit over the user's past-week login hours (the ML part). */
+  hourMean: number;
+  hourStd: number;
   usualDevices: string[];
   usualLocations: string[];
   usualEventTypes: string[];
@@ -45,10 +48,18 @@ function hourOf(ts: string): number {
   return Number.isFinite(h) ? h : 12;
 }
 
+/** Country token = text after the last comma ("Mumbai, India" -> "India"). */
+export function countryOf(location: string): string {
+  const parts = location.split(",");
+  return (parts[parts.length - 1] ?? location).trim();
+}
+
 /**
  * "Training": learn per-user baselines from past-week rows.
- * For each user we record usual working hours, devices, locations,
- * and event types. This is the model judges see being built day by day.
+ * This is unsupervised behavioral profiling (the classical UEBA approach):
+ *  - login hours are fitted to a Gaussian (mean + std dev),
+ *  - devices / locations / countries / event types become frequency tables.
+ * A new event is an anomaly when it lands far from these learned distributions.
  */
 export function trainBaselines(rows: ActivityRow[]): Map<string, UserBaseline> {
   const byUser = new Map<string, ActivityRow[]>();
@@ -63,18 +74,31 @@ export function trainBaselines(rows: ActivityRow[]): Map<string, UserBaseline> {
     const hours = list.map((r) => hourOf(r.timestamp)).sort((a, b) => a - b);
     const lo = hours[Math.floor(hours.length * 0.05)] ?? 9;
     const hi = hours[Math.floor(hours.length * 0.95)] ?? 17;
+    const mean = hours.reduce((a, h) => a + h, 0) / Math.max(hours.length, 1);
+    const variance = hours.reduce((a, h) => a + (h - mean) ** 2, 0) / Math.max(hours.length, 1);
     out.set(userId, {
       userId,
       userEmail: list[0].userEmail,
       eventCount: list.length,
       usualStartHour: lo,
       usualEndHour: hi,
+      hourMean: Math.round(mean * 10) / 10,
+      hourStd: Math.max(0.5, Math.round(Math.sqrt(variance) * 10) / 10),
       usualDevices: unique(list.map((r) => r.device)),
       usualLocations: unique(list.map((r) => r.location)),
       usualEventTypes: unique(list.map((r) => r.eventType)),
     });
   }
   return out;
+}
+
+/**
+ * How many standard deviations is this timestamp from the user's learned
+ * mean login hour? |z| > 3 ≈ "this person is never awake at this hour".
+ */
+export function hourZScore(ts: string, baseline: UserBaseline): number {
+  const z = (hourOf(ts) - baseline.hourMean) / baseline.hourStd;
+  return Math.round(Math.abs(z) * 10) / 10;
 }
 
 /** Score one recent event against the learned baseline. */
@@ -91,7 +115,8 @@ export function scoreEvent(
   const offHours = h < 6 || h >= 22 || (baseline && (h < baseline.usualStartHour - 2 || h > baseline.usualEndHour + 2));
   if (offHours) {
     score += 25;
-    reasons.push(`Unusual login time (${String(h).padStart(2, "0")}:00, usual ${baseline ? `${baseline.usualStartHour}:00-${baseline.usualEndHour}:00` : "daytime"})`);
+    const z = baseline ? `, z=${hourZScore(row.timestamp, baseline)} vs learned mean ${baseline.hourMean}:00` : "";
+    reasons.push(`Unusual login time (${String(h).padStart(2, "0")}:00, usual ${baseline ? `${baseline.usualStartHour}:00-${baseline.usualEndHour}:00` : "daytime"}${z})`);
   }
 
   if (baseline && !baseline.usualDevices.includes(row.device)) {
@@ -102,6 +127,18 @@ export function scoreEvent(
   if (baseline && !baseline.usualLocations.includes(row.location)) {
     score += 25;
     reasons.push(`Unseen location: ${row.location} (usual: ${baseline.usualLocations[0]})`);
+  }
+
+  // First-ever login from a new country (e.g. baseline US, login from India).
+  // This is what makes a single Mumbai login cross the 60 alert line:
+  // 5 + 25 (location) + 20 (device) + 15 (country) = 65.
+  if (baseline) {
+    const rowCountry = countryOf(row.location);
+    const knownCountries = unique(baseline.usualLocations.map(countryOf));
+    if (!knownCountries.includes(rowCountry)) {
+      score += 15;
+      reasons.push(`First-ever login from a new country: ${rowCountry} (baseline: ${knownCountries.join(", ")})`);
+    }
   }
 
   const et = row.eventType.toLowerCase();
@@ -159,7 +196,11 @@ export function correlate(scored: ScoredEvent[]): Incident[] {
   let n = 0;
   for (const [userId, list] of byUser) {
     const top = Math.max(...list.map((e) => e.riskScore));
-    if (list.length < 2 || top < 51) continue;
+    if (top < 51) continue;
+    // A single login at/above the alert line (60) already earns an incident
+    // card so recommended actions show immediately; weaker signals still
+    // need 2+ correlated events.
+    if (list.length < 2 && top < 60) continue;
     const severity = getRiskLevel(top);
     const factors = unique(list.flatMap((e) => e.reasons)).slice(0, 6);
     const email = list[0].userEmail;

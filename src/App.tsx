@@ -1,7 +1,9 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Activity,
   AlertTriangle,
+  Bell,
+  BellOff,
   Brain,
   CheckCircle2,
   Database,
@@ -18,18 +20,21 @@ import {
   Cell,
   Pie,
   PieChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import csvText from "./data/past_week_activity.csv?raw";
-import { LIVE_EVENTS } from "./data/liveEvents";
 import { groupByDay, parseActivityCsv, type ActivityRow } from "./ml/csv";
+import { subscribeToLogins, type BusMessage } from "./ml/bus";
+import { ensureAudio, playSiren } from "./ml/sound";
+import PortalPage from "./portal/PortalPage";
 import {
   correlate,
   getRiskLevel,
-  scoreAll,
+  scoreEvent,
   trainBaselines,
   type Incident,
   type RiskLevel,
@@ -38,6 +43,12 @@ import {
 } from "./ml/model";
 
 type Tab = "data" | "training" | "threats" | "users";
+
+/** Alert line: anything at or above this screams on the dashboard. */
+const ALERT_THRESHOLD = 60;
+
+const isPortalView =
+  typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "portal";
 
 const ALL_ROWS: ActivityRow[] = parseActivityCsv(csvText);
 
@@ -107,8 +118,6 @@ export default function App() {
   const [trainedDays, setTrainedDays] = useState<string[]>([]);
   const [trainLog, setTrainLog] = useState<string[]>([]);
   const [baselines, setBaselines] = useState<Map<string, UserBaseline> | null>(null);
-  const [scored, setScored] = useState<ScoredEvent[] | null>(null);
-  const [incidents, setIncidents] = useState<Incident[] | null>(null);
 
   // Response-action state (all buttons perform real local state changes)
   const [incidentStatus, setIncidentStatus] = useState<Record<string, string>>({});
@@ -116,6 +125,16 @@ export default function App() {
   const [loggedOutUsers, setLoggedOutUsers] = useState<string[]>([]);
   const [quarantinedUsers, setQuarantinedUsers] = useState<string[]>([]);
   const [verifiedUsers, setVerifiedUsers] = useState<string[]>([]);
+
+  // Threats feed: ONLY manual portal logins land here. Nothing is pre-seeded,
+  // so the page is clean until someone actually logs in via the portal tab.
+  const [soundOn, setSoundOn] = useState(true);
+  const [liveFeed, setLiveFeed] = useState<ScoredEvent[]>([]);
+  const [liveAlerts, setLiveAlerts] = useState<{ id: string; time: string; email: string; score: number; ack: boolean }[]>([]);
+  const [pendingRows, setPendingRows] = useState<ActivityRow[]>([]);
+  const baselinesRef = useRef<Map<string, UserBaseline> | null>(null);
+  const liveCounter = useRef(0);
+  baselinesRef.current = baselines;
 
   const days = useMemo(() => [...groupByDay(ALL_ROWS).keys()].sort(), []);
   const progress = baselines ? 100 : Math.round((trainedDays.length / Math.max(days.length, 1)) * 100);
@@ -137,35 +156,42 @@ export default function App() {
     [baselines]
   );
 
-  const anomalies = useMemo(
-    () => (scored ? scored.filter((s) => s.riskScore >= 26).sort((a, b) => b.riskScore - a.riskScore) : []),
-    [scored]
+  // Incidents form only from real portal logins: 2+ related events, top 51+.
+  // A single Mumbai login (65) shows as a HIGH alert row; a second event
+  // (e.g. password burst) correlates it into a full incident card.
+  const liveIncidents: Incident[] = useMemo(
+    () => (liveFeed.length ? correlate(liveFeed).map((inc, i) => ({ ...inc, id: `INC-LIVE-${i + 1}` })) : []),
+    [liveFeed]
   );
 
-  const criticalCount = useMemo(() => scored?.filter((s) => s.riskLevel === "CRITICAL").length ?? 0, [scored]);
+  const anomalies = useMemo(
+    () => liveFeed.filter((s) => s.riskScore >= 26).sort((a, b) => b.riskScore - a.riskScore),
+    [liveFeed]
+  );
+
+  const criticalCount = useMemo(() => liveFeed.filter((s) => s.riskLevel === "CRITICAL").length, [liveFeed]);
   const usersAtRisk = useMemo(() => new Set(anomalies.map((a) => a.userEmail)).size, [anomalies]);
 
   const trendData = useMemo(
     () =>
-      (scored ?? []).map((s, i) => ({
+      liveFeed.map((s, i) => ({
         name: `${i + 1}`,
-        time: s.timestamp.slice(11, 16),
+        time: s.timestamp.slice(11, 19),
         risk: s.riskScore,
         label: s.eventType,
       })),
-    [scored]
+    [liveFeed]
   );
 
   const distData = useMemo(() => {
     const counts: Record<RiskLevel, number> = { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 };
-    for (const s of scored ?? []) counts[s.riskLevel]++;
+    for (const s of liveFeed) counts[s.riskLevel]++;
     return (Object.keys(counts) as RiskLevel[]).map((k) => ({ name: k, value: counts[k] }));
-  }, [scored]);
+  }, [liveFeed]);
 
   const userRiskData = useMemo(() => {
-    if (!scored) return [];
     const top = new Map<string, number>();
-    for (const s of scored) top.set(s.userEmail, Math.max(top.get(s.userEmail) ?? 0, s.riskScore));
+    for (const s of liveFeed) top.set(s.userEmail, Math.max(top.get(s.userEmail) ?? 0, s.riskScore));
     return [...top.entries()]
       .map(([email, raw]) => {
         const eff = effectiveUserRisk(email, raw);
@@ -174,19 +200,34 @@ export default function App() {
       .sort((a, b) => b.risk - a.risk)
       .slice(0, 6);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scored, incidents, incidentStatus, loggedOutUsers, quarantinedUsers, verifiedUsers]);
+  }, [liveFeed, liveIncidents, incidentStatus, loggedOutUsers, quarantinedUsers, verifiedUsers]);
+
+  // Baseline self-check: score the training data against its own baseline.
+  // Expectation: clean (all LOW) — proof the model learned "normal".
+  const trainingOverview = useMemo(() => {
+    if (!baselines) return null;
+    const byDay = groupByDay(ALL_ROWS);
+    const perDay = [...byDay.entries()].sort().map(([day, rows]) => ({ day: day.slice(5), events: rows.length }));
+    let nonLow = 0;
+    for (const r of ALL_ROWS) {
+      if (scoreEvent(r, "selfcheck", baselines).riskLevel !== "LOW") nonLow++;
+    }
+    return { perDay, total: ALL_ROWS.length, nonLow };
+  }, [baselines]);
 
   async function handleTrain() {
     if (isTraining) return;
     setIsTraining(true);
     setBaselines(null);
-    setScored(null);
-    setIncidents(null);
     setIncidentStatus({});
     setActionLog({});
     setLoggedOutUsers([]);
     setQuarantinedUsers([]);
     setVerifiedUsers([]);
+    setLiveFeed([]);
+    setLiveAlerts([]);
+    setPendingRows([]);
+    liveCounter.current = 0;
     setTrainedDays([]);
     setTrainLog([]);
 
@@ -206,18 +247,60 @@ export default function App() {
     setBaselines(b);
     setTrainLog((prev) => [...prev, `Training complete: ${learned.length} events across ${b.size} users`]);
     setIsTraining(false);
+    // Flush portal logins that arrived before training finished.
+    setPendingRows((queued) => {
+      if (queued.length > 0) {
+        const rescored = queued.map((r) => {
+          liveCounter.current += 1;
+          return scoreEvent(r, `portal-${liveCounter.current}`, b);
+        });
+        setLiveFeed((prev) => [...prev, ...rescored]);
+        for (const s of rescored) maybeAlert(s);
+      }
+      return [];
+    });
   }
 
-  function handleAnalyze() {
-    if (!baselines) return;
-    const s = scoreAll(LIVE_EVENTS, baselines);
-    setScored(s);
-    const inc = correlate(s);
-    setIncidents(inc);
-    const status: Record<string, string> = {};
-    for (const i of inc) status[i.id] = "Open";
-    setIncidentStatus(status);
-    setTab("threats");
+  function maybeAlert(s: ScoredEvent) {
+    if (s.riskScore < ALERT_THRESHOLD) return;
+    const id = `alert-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+    setLiveAlerts((prev) => [...prev, { id, time: s.timestamp.slice(11, 19), email: s.userEmail, score: s.riskScore, ack: false }]);
+  }
+
+  function ingestPortalRow(row: ActivityRow) {
+    const b = baselinesRef.current;
+    if (!b) {
+      setPendingRows((prev) => [...prev, row]);
+      return;
+    }
+    liveCounter.current += 1;
+    const s = scoreEvent(row, `portal-${liveCounter.current}`, b);
+    setLiveFeed((prev) => [...prev, s]);
+    maybeAlert(s);
+  }
+
+  // Cross-tab subscription: portal tab -> dashboard tab. Always listening;
+  // events arriving before training are queued and scored on train completion.
+  useEffect(() => {
+    if (isPortalView) return;
+    return subscribeToLogins((msg: BusMessage) => ingestPortalRow(msg.row));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Siren loop: repeats while any alert is unacknowledged (and sound is on).
+  const unackedCount = liveAlerts.filter((a) => !a.ack).length;
+  useEffect(() => {
+    if (!soundOn || unackedCount === 0) return;
+    playSiren();
+    const t = setInterval(playSiren, 2600);
+    return () => clearInterval(t);
+  }, [soundOn, unackedCount]);
+
+  function resetLive() {
+    setLiveFeed([]);
+    setLiveAlerts([]);
+    setPendingRows([]);
+    liveCounter.current = 0;
   }
 
   function logAction(incidentId: string, text: string) {
@@ -276,9 +359,9 @@ export default function App() {
   }
 
   function effectiveUserRisk(email: string, raw: number): { score: number; level: RiskLevel } {
-    const related = (incidents ?? []).filter((i) => i.userEmail === email);
-    if (related.length > 0 && related.every((i) => (incidentStatus[i.id] ?? "Open") === "Resolved")) {
-      return { score: 8, level: "LOW" };
+    if (liveIncidents.length > 0 && liveIncidents.filter((i) => i.userEmail === email).every((i) => (incidentStatus[i.id] ?? "Open") === "Resolved")) {
+      const related = liveIncidents.filter((i) => i.userEmail === email);
+      if (related.length > 0) return { score: 8, level: "LOW" };
     }
     let s = raw;
     if (loggedOutUsers.includes(email)) s -= 45;
@@ -287,6 +370,8 @@ export default function App() {
     s = Math.max(5, Math.min(100, s));
     return { score: s, level: getRiskLevel(s) };
   }
+
+  if (isPortalView) return <PortalPage />;
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
@@ -370,9 +455,18 @@ export default function App() {
           <section className="bg-white border border-slate-200 rounded-lg shadow-sm p-5">
             <h2 className="text-base font-bold">Train the model on past-week data</h2>
             <p className="text-sm text-slate-600 mt-1">
-              The model learns each user's normal hours, devices, and locations day by day. Scores update only after
-              training is complete.
+              The model learns each user's normal hours, devices, locations, and countries day by day.
+              After training, the Threats page stays empty until someone logs in via the employee portal.
             </p>
+            <div className="mt-3 bg-teal-50 border border-teal-200 rounded-md px-3 py-2 text-sm">
+              <p className="font-bold">How pattern recognition works (unsupervised anomaly detection)</p>
+              <ul className="list-disc ml-5 mt-1 space-y-0.5 text-slate-700 text-xs">
+                <li>Login hours per user are fitted to a <span className="font-semibold">Gaussian (mean μ, std dev σ)</span> — a login's weirdness is its <span className="font-mono">z-score</span>.</li>
+                <li>Devices, locations, and countries become <span className="font-semibold">frequency tables</span> — anything with zero past sightings is an anomaly.</li>
+                <li>Deviations convert to risk points (unseen location +25, new country +15, off-hours +25…) capped at 100.</li>
+                <li>Related anomalies for one user correlate into a single incident. No blocklists, no signatures.</li>
+              </ul>
+            </div>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <button
                 onClick={handleTrain}
@@ -380,13 +474,6 @@ export default function App() {
                 className="bg-teal-700 text-white text-sm font-semibold px-4 py-2 rounded-md disabled:bg-slate-400"
               >
                 {isTraining ? "Training..." : baselines ? "Retrain model" : "Train model on past week"}
-              </button>
-              <button
-                onClick={handleAnalyze}
-                disabled={!baselines || isTraining}
-                className="bg-emerald-600 text-white text-sm font-semibold px-4 py-2 rounded-md disabled:bg-slate-300 disabled:text-slate-500"
-              >
-                Analyze recent activity
               </button>
               <span className="text-sm text-slate-600">{progress}% · {trainedDays.length}/{days.length} days</span>
             </div>
@@ -419,7 +506,7 @@ export default function App() {
                   <thead>
                     <tr className="bg-slate-50 text-slate-600 text-left">
                       <th className="px-3 py-2 font-semibold">User</th>
-                      <th className="px-3 py-2 font-semibold">Usual hours</th>
+                      <th className="px-3 py-2 font-semibold">Usual hours (μ ± σ)</th>
                       <th className="px-3 py-2 font-semibold">Usual device</th>
                       <th className="px-3 py-2 font-semibold">Usual location</th>
                       <th className="px-3 py-2 font-semibold">Events learned</th>
@@ -429,7 +516,7 @@ export default function App() {
                     {baselineList.map((b) => (
                       <tr key={b.userId} className="border-t border-slate-200">
                         <td className="px-3 py-2">{b.userEmail}</td>
-                        <td className="px-3 py-2 font-mono text-xs">{b.usualStartHour}:00 – {b.usualEndHour}:00</td>
+                        <td className="px-3 py-2 font-mono text-xs">{b.usualStartHour}:00 – {b.usualEndHour}:00 (μ {b.hourMean}, σ {b.hourStd})</td>
                         <td className="px-3 py-2 text-slate-600">{b.usualDevices[0]}</td>
                         <td className="px-3 py-2 text-slate-600">{b.usualLocations[0]}</td>
                         <td className="px-3 py-2">{b.eventCount}</td>
@@ -444,12 +531,60 @@ export default function App() {
 
         {tab === "threats" && (
           <div className="space-y-5">
-            {!scored ? (
+            {baselines && trainingOverview && liveFeed.length === 0 && (
               <section className="bg-white border border-slate-200 rounded-lg shadow-sm p-5">
-                <h2 className="text-base font-bold">No analysis yet</h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-base font-bold">Past-week baseline — learned normal</h2>
+                  <span className="text-xs font-bold px-2 py-1 rounded bg-emerald-600 text-white">
+                    {trainingOverview.total} EVENTS · {trainingOverview.nonLow} ANOMALIES
+                  </span>
+                </div>
                 <p className="text-sm text-slate-600 mt-1">
-                  Train the model first, then analyze recent activity. The attack sequence for alex@company.com
-                  (02:14 – 02:21) will be scored against the learned baseline.
+                  The training data scores clean against its own baseline — this is what "normal" looks like.
+                  Anything crossing the {ALERT_THRESHOLD} line below stands out against it.
+                </p>
+                <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <MiniStat label="Training events" value={String(trainingOverview.total)} />
+                  <MiniStat label="Users learned" value={String(baselineList.length)} />
+                  <MiniStat label="Days" value={String(days.length)} />
+                  <MiniStat label="Baseline anomalies" value={String(trainingOverview.nonLow)} />
+                </div>
+                <h3 className="text-sm font-bold mt-4 mb-1">Events per day (normal hours, usual devices)</h3>
+                <div className="h-40">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={trainingOverview.perDay}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis dataKey="day" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} />
+                      <Tooltip />
+                      <Bar dataKey="events" fill="#0d9488" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+            )}
+            {baselines && liveFeed.length === 0 && (
+              <section className="bg-white border border-slate-200 rounded-lg shadow-sm px-5 py-3 flex flex-wrap items-center gap-2 text-sm">
+                <span className="text-slate-600">
+                  Portal logins land below in ~1 second — open <span className="font-mono bg-slate-100 px-1 rounded">?view=portal</span> in a second tab.
+                  {pendingRows.length > 0 && ` (${pendingRows.length} waiting)`}
+                </span>
+                <div className="ml-auto flex gap-2">
+                  <button onClick={() => { ensureAudio(); setSoundOn((v) => !v); }} className="border border-slate-300 text-xs font-semibold px-3 py-1.5 rounded-md bg-white flex items-center gap-1.5">
+                    {soundOn ? <Bell size={15} /> : <BellOff size={15} />}
+                    {soundOn ? "Sound on" : "Muted"}
+                  </button>
+                  <button onClick={resetLive} className="border border-slate-300 text-xs font-semibold px-3 py-1.5 rounded-md bg-white">
+                    Reset live
+                  </button>
+                </div>
+              </section>
+            )}
+            {!baselines ? (
+              <section className="bg-white border border-slate-200 rounded-lg shadow-sm p-5">
+                <h2 className="text-base font-bold">No model trained yet</h2>
+                <p className="text-sm text-slate-600 mt-1">
+                  Train the model first. Afterwards this page stays clean until someone logs in via the employee portal.
                 </p>
                 <button
                   onClick={() => setTab("training")}
@@ -458,11 +593,33 @@ export default function App() {
                   Go to Training
                 </button>
               </section>
+            ) : liveFeed.length === 0 ? (
+              <section className="bg-white border border-emerald-300 rounded-lg shadow-sm px-5 py-4 flex items-center gap-3">
+                <span className="bg-emerald-600 text-white rounded-full p-1.5">
+                  <ShieldCheck size={16} />
+                </span>
+                <p className="text-sm text-slate-600">
+                  <span className="font-bold text-slate-900">All quiet.</span> No portal logins yet — sign in via the employee portal tab and watch this page react.
+                </p>
+              </section>
             ) : (
               <>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-mono bg-white border border-slate-200 px-2 py-1 rounded">alert at {ALERT_THRESHOLD}+</span>
+                  <div className="ml-auto flex gap-2">
+                    <button onClick={() => { ensureAudio(); setSoundOn((v) => !v); }} className="border border-slate-300 text-xs font-semibold px-3 py-1.5 rounded-md bg-white flex items-center gap-1.5">
+                      {soundOn ? <Bell size={15} /> : <BellOff size={15} />}
+                      {soundOn ? "Sound on" : "Muted"}
+                    </button>
+                    <button onClick={resetLive} className="border border-slate-300 text-xs font-semibold px-3 py-1.5 rounded-md bg-white">
+                      Reset live
+                    </button>
+                  </div>
+                </div>
+
                 {/* Stat hero row */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <StatCard label="Events analyzed" value={String(scored.length)} sub="last 24h" color="bg-teal-700" />
+                  <StatCard label="Logins seen" value={String(liveFeed.length)} sub="from portal" color="bg-teal-700" />
                   <StatCard label="Anomalies" value={String(anomalies.length)} sub="score 26+" color="bg-amber-500" />
                   <StatCard label="Critical events" value={String(criticalCount)} sub="score 76+" color="bg-red-600" />
                   <StatCard label="Users at risk" value={String(usersAtRisk)} sub="with anomalies" color="bg-orange-600" />
@@ -471,18 +628,19 @@ export default function App() {
                 {/* Charts */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <section className="bg-white border border-slate-200 rounded-lg shadow-sm p-4">
-                    <h3 className="text-sm font-bold">Risk escalation — recent activity</h3>
-                    <p className="text-xs text-slate-500 mb-2">Each bar is one event in time order. Watch the spike at 02:14–02:21.</p>
+                    <h3 className="text-sm font-bold">Risk per login (arrival order)</h3>
+                    <p className="text-xs text-slate-500 mb-2">Each bar is one portal login. The red line is the {ALERT_THRESHOLD} alert threshold.</p>
                     <div className="h-52">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={trendData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                          <XAxis dataKey="time" tick={{ fontSize: 10 }} interval={0} />
+                          <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                           <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
-                          <Tooltip formatter={(v) => [`${v}/100`, "Risk"]} labelFormatter={(_, p) => p?.[0]?.payload?.label ?? ""} />
+                          <Tooltip formatter={(v) => [`${v}/100`, "Risk"]} labelFormatter={(_, p) => `${p?.[0]?.payload?.time ?? ""} · ${p?.[0]?.payload?.label ?? ""}`} />
+                          <ReferenceLine y={ALERT_THRESHOLD} stroke="#dc2626" strokeDasharray="5 3" label={{ value: `alert ${ALERT_THRESHOLD}`, fontSize: 10, fill: "#dc2626" }} />
                           <Bar dataKey="risk" radius={[4, 4, 0, 0]}>
                             {trendData.map((d, i) => (
-                              <Cell key={i} fill={d.risk >= 76 ? "#dc2626" : d.risk >= 51 ? "#ea580c" : d.risk >= 26 ? "#d97706" : "#059669"} />
+                              <Cell key={i} fill={d.risk >= ALERT_THRESHOLD ? "#dc2626" : d.risk >= 26 ? "#d97706" : "#059669"} />
                             ))}
                           </Bar>
                         </BarChart>
@@ -491,7 +649,7 @@ export default function App() {
                   </section>
                   <section className="bg-white border border-slate-200 rounded-lg shadow-sm p-4">
                     <h3 className="text-sm font-bold">Risk distribution + top users</h3>
-                    <p className="text-xs text-slate-500 mb-2">Most activity is LOW. One account owns all the CRITICAL mass.</p>
+                    <p className="text-xs text-slate-500 mb-2">Normal logins stay LOW. Attack logins own the HIGH/CRITICAL mass.</p>
                     <div className="grid grid-cols-2 gap-2 items-center">
                       <div className="h-44">
                         <ResponsiveContainer width="100%" height="100%">
@@ -536,13 +694,29 @@ export default function App() {
                   </section>
                 </div>
 
-                {incidents?.map((inc) => {
+                {unackedCount > 0 && (
+                  <section className="rounded-lg bg-red-600 text-white p-5 shadow">
+                    <p className="text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-white animate-pulse" /> High-risk alert
+                    </p>
+                    {liveAlerts.filter((a) => !a.ack).map((a) => (
+                      <div key={a.id} className="mt-2 flex flex-wrap items-center gap-3">
+                        <p className="text-2xl font-black">{a.email} hit {a.score}/100</p>
+                        <button onClick={() => setLiveAlerts((prev) => prev.map((x) => (x.id === a.id ? { ...x, ack: true } : x)))} className="bg-white text-red-700 text-sm font-bold px-3 py-1.5 rounded">
+                          Acknowledge
+                        </button>
+                      </div>
+                    ))}
+                  </section>
+                )}
+
+                {liveIncidents.map((inc) => {
+                  const live = effectiveFor(inc);
                   const status = incidentStatus[inc.id] ?? "Open";
                   const logs = actionLog[inc.id] ?? [];
                   const isOut = loggedOutUsers.includes(inc.userEmail);
                   const isQ = quarantinedUsers.includes(inc.userEmail);
                   const isV = verifiedUsers.includes(inc.userEmail);
-                  const live = effectiveFor(inc);
                   const reduced = inc.riskScore - live.score;
                   const reducedPct = Math.round((reduced / inc.riskScore) * 100);
                   return (
@@ -579,7 +753,7 @@ export default function App() {
                           </div>
                           <div className="pb-1">
                             <p className="text-xl font-bold leading-tight">{inc.title}</p>
-                            <p className={`text-sm ${HERO_SUB[live.level]}`}>{inc.userEmail} · {inc.eventIds.length} related events · 02:14–02:21</p>
+                            <p className={`text-sm ${HERO_SUB[live.level]}`}>{inc.userEmail} · {inc.eventIds.length} related events</p>
                           </div>
                         </div>
                         {/* Live cool-down bar */}
@@ -612,13 +786,13 @@ export default function App() {
                           <p className="text-slate-700 bg-slate-50 border border-slate-200 rounded px-2.5 py-2">{inc.assessment}</p>
                           <h3 className="font-bold mt-4 mb-1">Attack timeline</h3>
                           <ol className="relative border-l-2 border-red-300 ml-2 space-y-2">
-                            {scored
+                            {liveFeed
                               .filter((s) => inc.eventIds.includes(s.id))
                               .map((s) => (
                                 <li key={s.id} className="ml-4">
                                   <span className="absolute -ml-[21px] mt-1 w-3 h-3 rounded-full bg-red-600 border-2 border-white" />
                                   <div className="bg-white border border-slate-200 rounded px-2 py-1">
-                                    <span className="font-mono text-xs font-bold">{s.timestamp.slice(11, 16)}</span>
+                                    <span className="font-mono text-xs font-bold">{s.timestamp.slice(11, 19)}</span>
                                     <span className="text-xs"> — {s.eventType} </span>
                                     <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${riskBadge(s.riskLevel)}`}>{s.riskScore}</span>
                                   </div>
@@ -685,7 +859,7 @@ export default function App() {
 
                 <section className="bg-white border border-slate-200 rounded-lg shadow-sm">
                   <div className="p-5 border-b border-slate-200 flex flex-wrap items-center gap-2">
-                    <h2 className="text-base font-bold">Scored recent activity ({anomalies.length} anomalies)</h2>
+                    <h2 className="text-base font-bold">Scored portal logins ({anomalies.length} anomalies)</h2>
                     <span className="text-xs font-bold px-2 py-1 rounded bg-red-600 text-white">{criticalCount} CRITICAL</span>
                   </div>
                   <div className="overflow-x-auto">
@@ -700,8 +874,8 @@ export default function App() {
                         </tr>
                       </thead>
                       <tbody>
-                        {scored.map((s) => (
-                          <tr key={s.id} className={`border-t border-slate-200 ${s.riskScore >= 76 ? "bg-red-50" : ""}`}>
+                        {liveFeed.map((s) => (
+                          <tr key={s.id} className={`border-t border-slate-200 ${s.riskScore >= ALERT_THRESHOLD ? "bg-red-50" : ""}`}>
                             <td className="px-4 py-2 font-mono text-xs">{s.timestamp}</td>
                             <td className="px-4 py-2">{s.userEmail}</td>
                             <td className="px-4 py-2">{s.eventType}</td>
@@ -717,6 +891,24 @@ export default function App() {
                     </table>
                   </div>
                 </section>
+
+                {liveAlerts.length > 0 && (
+                  <section className="bg-white border border-slate-200 rounded-lg shadow-sm p-5">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold">Alert history ({liveAlerts.length})</h3>
+                      <button onClick={() => setLiveAlerts((prev) => prev.map((a) => ({ ...a, ack: true })))} className="ml-auto text-xs font-bold border border-slate-300 rounded px-2 py-1 bg-white">
+                        Acknowledge all
+                      </button>
+                    </div>
+                    <ul className="mt-2 space-y-1">
+                      {[...liveAlerts].reverse().map((a) => (
+                        <li key={a.id} className={`text-xs font-mono rounded px-2 py-1 border ${a.ack ? "bg-slate-50 border-slate-200 text-slate-500" : "bg-red-50 border-red-300 text-red-800 font-bold"}`}>
+                          {a.time} — {a.email} crossed {ALERT_THRESHOLD} at {a.score}/100 {a.ack ? "(acknowledged)" : "(sounding)"}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
               </>
             )}
           </div>
@@ -727,7 +919,7 @@ export default function App() {
             <div className="p-5 border-b border-slate-200">
               <h2 className="text-base font-bold">Users</h2>
               <p className="text-sm text-slate-600">
-                {baselines ? "Current risk comes from the latest analysis. Response actions update this table live." : "Train the model to see learned profiles and risk."}
+                {baselines ? "Training baseline plus live risk from portal logins. Response actions update this table live." : "Train the model to see learned profiles and risk."}
               </p>
             </div>
             <div className="overflow-x-auto">
@@ -738,7 +930,7 @@ export default function App() {
                     <th className="px-4 py-2 font-semibold">Usual hours</th>
                     <th className="px-4 py-2 font-semibold">Usual location</th>
                     <th className="px-4 py-2 font-semibold">State</th>
-                    <th className="px-4 py-2 font-semibold">Current risk</th>
+                    <th className="px-4 py-2 font-semibold">Live risk</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -746,7 +938,7 @@ export default function App() {
                     ? baselineList
                     : [{ userId: "x", userEmail: "Train the model first", usualStartHour: 0, usualEndHour: 0, usualDevices: ["-"], usualLocations: ["-"], eventCount: 0 } as UserBaseline]
                   ).map((b) => {
-                    const top = scored?.filter((s) => s.userId === b.userId).sort((a, z) => z.riskScore - a.riskScore)[0];
+                    const top = liveFeed.filter((s) => s.userId === b.userId).sort((a, z) => z.riskScore - a.riskScore)[0];
                     const eff = top ? effectiveUserRisk(b.userEmail, top.riskScore) : null;
                     const flags: string[] = [];
                     if (quarantinedUsers.includes(b.userEmail)) flags.push("Quarantined");
@@ -769,7 +961,7 @@ export default function App() {
                               )}
                             </span>
                           ) : (
-                            <span className="text-xs text-slate-500">Not scored</span>
+                            <span className="text-xs text-slate-500">No logins yet</span>
                           )}
                         </td>
                       </tr>
@@ -783,7 +975,7 @@ export default function App() {
       </main>
 
       <footer className="max-w-6xl mx-auto px-4 pb-6 text-xs text-slate-500">
-        NEXRA · Local baseline model · Risk: 0–25 LOW, 26–50 MEDIUM, 51–75 HIGH, 76–100 CRITICAL · No data leaves the browser.
+        NEXRA · Local baseline model · Risk: 0–25 LOW, 26–50 MEDIUM, 51–75 HIGH, 76–100 CRITICAL · Alert at {ALERT_THRESHOLD}+ · No data leaves the browser.
       </footer>
     </div>
   );
@@ -809,6 +1001,15 @@ function StatCard({ label, value, sub, color }: { label: string; value: string; 
       <p className="text-xs font-semibold uppercase tracking-wide opacity-90">{label}</p>
       <p className="text-4xl font-black leading-tight">{value}</p>
       <p className="text-xs opacity-90">{sub}</p>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-slate-50 border border-slate-200 rounded-md px-3 py-2">
+      <p className="text-xs text-slate-500 font-semibold">{label}</p>
+      <p className="text-2xl font-black">{value}</p>
     </div>
   );
 }

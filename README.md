@@ -21,10 +21,13 @@ No. The previous Gemini/`.env` setup is not used. This version uses only a local
 ```
 data/past_week_activity.csv        # Same CSV judges open (copy for easy access)
 src/data/past_week_activity.csv    # CSV bundled into the app
-src/data/liveEvents.ts             # Recent activity analyzed after training (includes attack sequence)
+src/data/users.ts                  # Known users + portal locations (Austin / Mumbai / Delhi)
 src/ml/csv.ts                      # CSV parser + groupByDay
-src/ml/model.ts                    # trainBaselines, scoreEvent/scoreAll, correlate, getRiskLevel
-src/App.tsx                        # Simple 4-tab UI: Activity Data, Training, Threats, Users
+src/ml/model.ts                    # trainBaselines, scoreEvent, correlate, getRiskLevel (+15 new-country rule)
+src/ml/bus.ts                      # Cross-tab bus (portal tab -> dashboard tab, no server)
+src/ml/sound.ts                    # WebAudio siren, no audio files
+src/portal/PortalPage.tsx          # Fake employee sign-in page (?view=portal)
+src/App.tsx                        # UI: Activity Data, Training, Threats, Users
 src/main.tsx                       # Entry
 src/index.css                      # Simple solid light theme
 index.html                         # Title
@@ -54,21 +57,39 @@ Old experiment folders (`src/components/*`, `src/detection/*`, `src/context/*`) 
   5. `Privilege Change` to SuperAdmin → 100 CRITICAL
 - Correlated into one incident: **Potential Account Compromise**, CRITICAL
 
-## Risk scoring
+## How pattern recognition works (the simple ML inside)
 
-Learned per user: usual hours, devices, locations, event types.
+Unsupervised behavioral profiling — the classical UEBA approach, no neural networks:
+
+1. **Learn (training):** per user, login hours are fitted to a Gaussian (mean μ, std dev σ — see the `μ ± σ` column in Learned profiles); devices, locations, and countries become frequency tables.
+2. **Detect (live):** each login is scored by deviation — unseen location +25, new country +15, unseen device +20, off-hours +25 (with its z-score shown, e.g. 02:00 for Alex is z=4.4 against μ 12.5), failed bursts +30, capped at 100.
+3. **Correlate:** related anomalies for one user merge into a single incident; one login at/above the 60 line already earns an incident card.
 
 | Signal | Points |
 |---|---|
 | Unusual time (outside usual ±2h, or 22:00–06:00) | +25 |
 | Unseen device | +20 |
 | Unseen location | +25 |
+| First-ever login from a new country | +15 |
 | Failed logins (burst ≥5) | +30 (else +20) |
 | Sensitive file | +30 |
 | Privilege change | +40 |
 | Untrusted network | +20 |
 
 Base 5, capped 0–100. Levels: 0–25 LOW, 26–50 MEDIUM, 51–75 HIGH, 76–100 CRITICAL.
+Live siren threshold: fixed **60** (inside HIGH, so single strong anomalies page an analyst).
+
+## Live two-tab demo (portal → Threats page, same laptop, no network)
+
+Threats starts with data, not blank: a **past-week baseline** section (174 training events, 10 users, 7 days, 0 anomalies badge, events-per-day chart) proves the model learned clean "normal". The moment the first portal login lands, the baseline sections collapse and the live view (siren, banner, incident cards, live charts) takes over. Nothing scores HIGH/CRITICAL before a real login.
+
+1. `npm run dev`, open `http://localhost:3000` (dashboard) + `http://localhost:3000?view=portal` (plain employee sign-in) in the **same browser**.
+2. Dashboard → **Training** → train once.
+3. Dashboard → **Threats** → click the sound button once to enable the siren.
+4. Portal tab (as `alex@company.com`): sign in from **Austin** → ~5 LOW, page stays quiet. Switch to **Mumbai** → **65 HIGH**: siren + red banner + incident card with risk factors and 4 recommended actions. **Password-guessing burst** → ~95+ CRITICAL, incident escalates.
+5. Respond on the dashboard (log out / quarantine / verify / resolve) — the banner cools red → green exactly like before.
+
+Full command runbook with trigger table: see **PRESENTATION.md**.
 
 ## How to run
 
