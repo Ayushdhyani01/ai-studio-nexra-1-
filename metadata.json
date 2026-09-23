@@ -1,0 +1,6 @@
+{
+  "name": "NEXRA Cybersecurity Risk & Threat Intelligence",
+  "description": "AI-assisted cybersecurity threat detection and risk analysis platform featuring real-time event correlation, risk scoring, explainable AI diagnostics, and interactive threat simulations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
